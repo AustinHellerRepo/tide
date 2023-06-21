@@ -168,6 +168,7 @@ impl<'a, State: Clone + Send + Sync + 'static> Route<'a, State> {
         // Verify path exists, return error if it doesn't.
         let dir = dir.as_ref().to_owned().canonicalize()?;
         let prefix = self.path().to_string();
+        println!("tide: prefix: {}", prefix);
         self.get(ServeDir::new(prefix, dir));
         Ok(())
     }
