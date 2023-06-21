@@ -24,10 +24,11 @@ where
     State: Clone + Send + Sync + 'static,
 {
     async fn call(&self, req: Request<State>) -> Result {
+        println!("call made to ServeDir");
         let path = req.url().path();
         let path = path
             .strip_prefix(self.prefix.trim_end_matches('*'))
-            .unwrap();
+            .expect("The path should permit stripping the prefix.");
         let path = path.trim_start_matches('/');
         let mut file_path = self.dir.clone();
         for p in Path::new(path) {
@@ -40,17 +41,17 @@ where
             }
         }
 
-        info!("Requested file: {:?}", file_path);
+        println!("Requested file: {:?}", file_path);
 
         let file_path = AsyncPathBuf::from(file_path);
         if !file_path.starts_with(&self.dir) {
-            warn!("Unauthorized attempt to read: {:?}", file_path);
+            println!("Unauthorized attempt to read: {:?}", file_path);
             Ok(Response::new(StatusCode::Forbidden))
         } else {
             match Body::from_file(&file_path).await {
                 Ok(body) => Ok(Response::builder(StatusCode::Ok).body(body).build()),
                 Err(e) if e.kind() == io::ErrorKind::NotFound => {
-                    warn!("File not found: {:?}", &file_path);
+                    println!("File not found: {:?}", &file_path);
                     Ok(Response::new(StatusCode::NotFound))
                 }
                 Err(e) => Err(e.into()),
